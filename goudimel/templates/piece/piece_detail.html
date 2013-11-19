@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h1>{{ content.title }}</h1>
+
+<ul>
+{% for phrase in content.phrases %}
+    <li><a href="{{ phrase.url }}">{{ phrase.phrase_text }}</a></li>
+{% endfor %}
+</ul>
+
+{{content.book_id}}
+
+{% endblock %}
+
