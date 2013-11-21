@@ -1,9 +1,12 @@
 Django==1.6
+PyYAML==3.10
 South==0.8.3
 Werkzeug==0.9.4
 django-extensions==1.2.5
 djangorestframework==2.3.9
+gunicorn==18.0
 ipython==1.1.0
+pyaml==13.07.1
 six==1.4.1
 solrpy==0.9.5
 wsgiref==0.1.2

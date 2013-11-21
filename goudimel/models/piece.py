@@ -1,5 +1,6 @@
 from django.db import models
-
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
 
 class Piece(models.Model):
     class Meta:
@@ -18,3 +19,44 @@ class Piece(models.Model):
 
     def __unicode__(self):
         return u"{0}".format(self.title)
+
+@receiver(post_save, sender=Piece)
+def solr_index(sender, instance, created, **kwarg):
+    import uuid
+    from django.conf import settings
+    import solr
+
+    solrconn = solr.SolrConnection(settings.SOLR_SERVER)
+    record = solrconn.query("type:goudimel_piece item_id:{0}".format(instance.id))
+    if record:
+        # the record already exists, so we'll remove the first
+        solrconn.delete(record.results[0]['id'])
+
+    piece = instance
+    d = {
+        'type': 'goudimel_piece',
+        'id': str(uuid.uuid4()),
+        'item_id': piece.id,
+        'title': piece.title,
+        'composer_src': piece.composer_src,
+        'forces': piece.forces,
+        'print_concordances': piece.print_concordances,
+        'ms_concordances': piece.ms_concordances,
+        'pdf_link': piece.pdf_link,
+        'book_title':piece.book_id.title,
+        'book_id':piece.book_id.id,
+
+
+    }
+    solrconn.add(**d)
+    solrconn.commit()
+
+
+@receiver(post_delete, sender=Piece)
+def solr_delete(sender, instance, created, **kwargs):
+    from django.conf import settings
+    import solr
+    solrconn = solr.SolrConnection(settings.SOLR_SERVER)
+    record = solrconn.query("type:goudimel_piece item_id:{0}".format(instance.id))
+    solrconn.delete(record.results[0]['id'])
+    solrconn.commit()

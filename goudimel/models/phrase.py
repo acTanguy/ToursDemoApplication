@@ -1,5 +1,6 @@
 from django.db import models
-
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
 
 class Phrase(models.Model):
     class Meta:
@@ -17,3 +18,40 @@ class Phrase(models.Model):
 
     def __unicode__(self):
         return u"{0}".format(self.phrase_text)
+
+@receiver(post_save, sender=Phrase)
+def solr_index(sender, instance, created, **kwarg):
+    import uuid
+    from django.conf import settings
+    import solr
+
+    solrconn = solr.SolrConnection(settings.SOLR_SERVER)
+    record = solrconn.query("type:goudimel_phrase item_id:{0}".format(instance.id))
+    if record:
+        # the record already exists, so we'll remove the first
+        solrconn.delete(record.results[0]['id'])
+
+    phrase = instance
+    d = {
+        'type': 'goudimel_phrase',
+        'id': str(uuid.uuid4()),
+        'item_id':phrase.id,
+        'phrase_num': phrase.phrase_num,
+        'phrase_start': phrase.phrase_start,
+        'phrase_stop': phrase.phrase_stop,
+        'rhyme': phrase.rhyme,
+        'phrase_text': phrase.phrase_text,
+
+    }
+    solrconn.add(**d)
+    solrconn.commit()
+
+
+@receiver(post_delete, sender=Phrase)
+def solr_delete(sender, instance, created, **kwargs):
+    from django.conf import settings
+    import solr
+    solrconn = solr.SolrConnection(settings.SOLR_SERVER)
+    record = solrconn.query("type:goudimel_phrase item_id:{0}".format(instance.id))
+    solrconn.delete(record.results[0]['id'])
+    solrconn.commit()

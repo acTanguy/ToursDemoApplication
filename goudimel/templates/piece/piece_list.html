@@ -2,11 +2,28 @@
 
 {% block body %}
     <h1>Piece List</h1>
-    <ul>
+
+
+<div class="bs-example">
+    <table class="table">
+     <thead>
+        <tr>
+            <th>Piece Title</th>
+            <th>Composer</th>
+            <th>Book</th>
+        </tr>
+    </thead>
+    <tbody>
     {% for piece in content %}
-        <li><a href="{{ piece.url }}">{{ piece.title }}</a></li>
+        <tr>
+            <td><a href="{{ piece.url }}">{{ piece.title }}</a></td>
+            <td>{{ piece.composer_src }}</td>
+            <td>{{ piece.book_id }}</td>
+        </tr>
     {% endfor %}
-    </ul>
+    </tbody>
+    </table>
+</div>
 
     
 {% endblock %}
